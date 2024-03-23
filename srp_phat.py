@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import pyroomacoustics as pra
 import librosa
 
+
 # 写一个函数用来读取数据
 def read_audio(filename):
     _fs, _y = wav.read(filename)
@@ -22,24 +23,20 @@ def srp_phat(s, L, fs, nfft=None, mode='far'):
     # 对每个信号执行STFT分析
     s_FFT = np.array([stft_instance.analysis(signal).T for signal in s])
 
-    # s_FFT = np.array([pra.stft(s, nfft, nfft // 2, transform=np.fft.rfft).T for s in s])
-
     # 创建一个SRP类
     doa = pra.doa.srp.SRP(L, fs, nfft, c=343.0, num_src=1, mode=mode, r=None, azimuth=None, colatitude=None)
 
     # 进行SRP
     doa.locate_sources(s_FFT)
 
+    doa.polar_plt_dirac()
+    plt.title('SRP_PHAT')
     # 使用自带的方法画图
-    print('SRP-PHAT')
     print('Speakers at: ', np.sort(doa.azimuth_recon) / np.pi * 180, 'degrees')
-
+    plt.show()
 
 
 if __name__ == '__main__':
-    # print(f'数据形状为{x_1.shape}')
-    # print(f'fs大小为{fs_1}')
-
     # 通过文档获得的第一个麦克风阵列坐标
     L_1 = np.array([[-0.1, 0.4, 0],  # 1
                     [-0.07071, 0.32929, 0],  # 2

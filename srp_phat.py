@@ -84,7 +84,7 @@ def vad(y, fs, thrs):
 
 
 # srp-phat函数
-def srp_phat(s, L, fs, nfft=None, mode='far'):
+def srp_phat(s, L, fs, i, nfft=None, mode='far'):
     if nfft is None:
         nfft = 1024
 
@@ -94,43 +94,68 @@ def srp_phat(s, L, fs, nfft=None, mode='far'):
     s_FFT = np.array([stft_instance.analysis(signal).T for signal in s])
 
     # 创建一个SRP类
-    doa = pra.doa.srp.SRP(L, fs, nfft, c=343.0, num_src=1, mode=mode, r=None, azimuth=None, colatitude=None)
+    doa = pra.doa.srp.SRP(L, fs, nfft, c=343.0, num_src=1, mode=mode, r=None, azimuth=None, colatitude=None, dim=3)
+    # 指定三维，输出结果为经纬度采样，经度：-180～180 维度：-90～90
 
     # 进行SRP
     doa.locate_sources(s_FFT)
-    print(f'方位角的上srp的值为:{doa.grid.values}')
+    # print(f'方位角的上srp的值为:{max(doa.grid.values)}')
+    print(f'第{i}个阵列测得方位角为: ', np.sort(doa.azimuth_recon) / np.pi * 180, 'degrees')
+    print(f'第{i}个阵列测得高度角为: ', np.sort(doa.colatitude_recon) / np.pi/2 * 90, 'degrees')
     matrix = np.array(doa.grid.values)
-    print(matrix.shape)
 
     # doa.polar_plt_dirac()
     # plt.title('SRP_PHAT')
     # 使用自带的方法画图
-    # print('Speakers at: ', np.sort(doa.azimuth_recon) / np.pi * 180, 'degrees')
+
     # plt.show()
 
 
 if __name__ == '__main__':
     # 通过文档获得的第一个麦克风阵列坐标
-    L_1 = np.array([[-0.1, 0.4, 0],  # 1
-                    [-0.07071, 0.32929, 0],  # 2
-                    [0, 0.3, 0],  # 3
-                    [0.07071, 0.32939, 0],  # 4
-                    [0.1, 0.4, 0],  # 5
-                    [0.07071, 0.47071, 0],  # 6
-                    [0, 0.5, 0],  # 7
-                    [-0.07071, 0.47071, 0]]
+    L_1 = np.array([[-0.1, 0.4, 0.4],  # 1
+                    [-0.07071, 0.32929, 0.4],  # 2
+                    [0, 0.3, 0.4],  # 3
+                    [0.07071, 0.32939, 0.4],  # 4
+                    [0.1, 0.4, 0.4],  # 5
+                    [0.07071, 0.47071, 0.4],  # 6
+                    [0, 0.5, 0.4],  # 7
+                    [-0.07071, 0.47071, 0.4]]
                    ).T
-    print(L_1.shape[1])
+    L_2 = np.array([
+        [-0.10000, - 0.40000, - 0.00000],
+        [- 0.07071, - 0.47071, - 0.00000],
+        [0.00000, - 0.50000, - 0.00000],
+        [0.07071, - 0.47071, - 0.00000],
+        [0.10000, - 0.40000, 0.00000],
+        [0.07071, - 0.32929,   0.00000],
+        [0.00000, - 0.30000, 0.00000],
+        [- 0.07071, - 0.32929, 0.00000]
+    ]).T
 
-    x_1, fs_1 = read_audio('seq11-1p-0100_array1_mic1.wav')
-    x_2, fs_2 = read_audio('seq11-1p-0100_array1_mic2.wav')
-    x_3, fs_3 = read_audio('seq11-1p-0100_array1_mic3.wav')
-    x_4, fs_4 = read_audio('seq11-1p-0100_array1_mic4.wav')
-    x_5, fs_5 = read_audio('seq11-1p-0100_array1_mic5.wav')
-    x_6, fs_6 = read_audio('seq11-1p-0100_array1_mic6.wav')
-    x_7, fs_7 = read_audio('seq11-1p-0100_array1_mic7.wav')
-    x_8, fs_8 = read_audio('seq11-1p-0100_array1_mic8.wav')
+    x_1, fs_1 = read_audio('array1/seq11-1p-0100_array1_mic1.wav')
+    x_2, fs_2 = read_audio('array1/seq11-1p-0100_array1_mic2.wav')
+    x_3, fs_3 = read_audio('array1/seq11-1p-0100_array1_mic3.wav')
+    x_4, fs_4 = read_audio('array1/seq11-1p-0100_array1_mic4.wav')
+    x_5, fs_5 = read_audio('array1/seq11-1p-0100_array1_mic5.wav')
+    x_6, fs_6 = read_audio('array1/seq11-1p-0100_array1_mic6.wav')
+    x_7, fs_7 = read_audio('array1/seq11-1p-0100_array1_mic7.wav')
+    x_8, fs_8 = read_audio('array1/seq11-1p-0100_array1_mic8.wav')
     X = [x_1, x_2, x_3, x_4, x_5, x_6, x_7, x_8]
     X = np.array(X)
 
-    srp_phat(s=X, L=L_1, fs=fs_1)
+    srp_phat(s=X, L=L_1, fs=fs_1, i=1)
+
+    x_9, fs_9 = read_audio('array2/seq11-1p-0100_array2_mic1.wav')
+    x_10, fs_10 = read_audio('array2/seq11-1p-0100_array2_mic2.wav')
+    x_11, fs_11 = read_audio('array2/seq11-1p-0100_array2_mic3.wav')
+    x_12, fs_12 = read_audio('array2/seq11-1p-0100_array2_mic4.wav')
+    x_13, fs_13 = read_audio('array2/seq11-1p-0100_array2_mic5.wav')
+    x_14, fs_14 = read_audio('array2/seq11-1p-0100_array2_mic6.wav')
+    x_15, fs_15 = read_audio('array2/seq11-1p-0100_array2_mic7.wav')
+    x_16, fs_16 = read_audio('array2/seq11-1p-0100_array2_mic8.wav')
+    X_ = [x_9, x_10, x_11, x_12, x_13, x_14, x_15, x_16]
+    X_ = np.array(X_)
+
+    srp_phat(s=X_, L=L_2, fs=fs_9, i=2)
+

@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="srp-phat" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="srp-phat" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.8 (ssl)" project-jdk-type="Python SDK" />
 </project>

@@ -192,8 +192,8 @@ if __name__ == '__main__':
     plt.scatter([max_azimuth], [max_colatitude], color='blue', label='Maximum SRP-PHAT')
     plt.legend()
 
-    plt.show()
     plt.savefig('SRP-PHAT-Heatmap.png')
+    plt.show()
 
     # x_9, fs_9 = read_audio('array2/seq11-1p-0100_array2_mic1.wav')
     # x_10, fs_10 = read_audio('array2/seq11-1p-0100_array2_mic2.wav')

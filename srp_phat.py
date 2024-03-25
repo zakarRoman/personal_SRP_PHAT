@@ -4,6 +4,8 @@ import scipy.io.wavfile as wav
 import matplotlib.pyplot as plt
 import pyroomacoustics as pra
 import librosa
+import seaborn as sn
+from scipy.interpolate import griddata
 
 
 # 写一个函数用来读取数据
@@ -100,15 +102,27 @@ def srp_phat(s, L, fs, i, nfft=None, mode='far'):
     # 进行SRP
     doa.locate_sources(s_FFT)
     # print(f'方位角的上srp的值为:{max(doa.grid.values)}')
-    print(f'第{i}个阵列测得方位角为: ', np.sort(doa.azimuth_recon) / np.pi * 180, 'degrees')
-    print(f'第{i}个阵列测得高度角为: ', np.sort(doa.colatitude_recon) / np.pi/2 * 90, 'degrees')
+    index1 = np.where(doa.grid.azimuth == doa.azimuth_recon)
+    index2 = np.where(doa.grid.colatitude == doa.colatitude_recon)
+    print(f'第{i}个阵列测得方位角为: ', np.sort(doa.azimuth_recon) / np.pi * 180, f'degrees,数值为{doa.azimuth_recon}，索引为', index1)
+    degree_func_azimuth = np.vectorize(lambda x: x / np.pi * 180)
+    azimuth_matrix = degree_func_azimuth(doa.grid.azimuth)
+    print(f'第{i}个阵列测得高度角为: ', np.sort(doa.colatitude_recon) / np.pi/2 * 90, f'degrees,数值为{doa.colatitude_recon}，索引为', index2)
+    degree_func_colatitude = np.vectorize(lambda x: x / np.pi/2 * 90)
+    colatitude_matrix = degree_func_colatitude(doa.grid.colatitude)
     matrix = np.array(doa.grid.values)
+    srp_max = max(matrix)
 
+    print(srp_max)
+    # index3 = np.where(matrix == srp_max)
+    # print(f"最大的srp值为{srp_max}，索引为{index3}")
     # doa.polar_plt_dirac()
     # plt.title('SRP_PHAT')
     # 使用自带的方法画图
 
     # plt.show()
+
+    return azimuth_matrix, colatitude_matrix, matrix
 
 
 if __name__ == '__main__':
@@ -144,18 +158,53 @@ if __name__ == '__main__':
     X = [x_1, x_2, x_3, x_4, x_5, x_6, x_7, x_8]
     X = np.array(X)
 
-    srp_phat(s=X, L=L_1, fs=fs_1, i=1)
+    azimuth1, colatitude1, srp1 = srp_phat(s=X, L=L_1, fs=fs_1, i=1)
+    print(min(azimuth1))
+    print(max(azimuth1))
+    print(min(colatitude1))
+    print(max(colatitude1))
+    print(srp1[:20])
 
-    x_9, fs_9 = read_audio('array2/seq11-1p-0100_array2_mic1.wav')
-    x_10, fs_10 = read_audio('array2/seq11-1p-0100_array2_mic2.wav')
-    x_11, fs_11 = read_audio('array2/seq11-1p-0100_array2_mic3.wav')
-    x_12, fs_12 = read_audio('array2/seq11-1p-0100_array2_mic4.wav')
-    x_13, fs_13 = read_audio('array2/seq11-1p-0100_array2_mic5.wav')
-    x_14, fs_14 = read_audio('array2/seq11-1p-0100_array2_mic6.wav')
-    x_15, fs_15 = read_audio('array2/seq11-1p-0100_array2_mic7.wav')
-    x_16, fs_16 = read_audio('array2/seq11-1p-0100_array2_mic8.wav')
-    X_ = [x_9, x_10, x_11, x_12, x_13, x_14, x_15, x_16]
-    X_ = np.array(X_)
+    """使用原生matplotlib绘图"""
+    # 定义网格
+    grid_azimuth, grid_colatitude = np.meshgrid(np.linspace(min(azimuth1), max(azimuth1), 100),
+                                                np.linspace(min(colatitude1), max(colatitude1), 100))
 
-    srp_phat(s=X_, L=L_2, fs=fs_9, i=2)
+    # 插值
+    grid_srp = griddata((azimuth1, colatitude1), srp1, (grid_azimuth, grid_colatitude), method='cubic')
+
+    # 寻找srp-phat的最大值位置
+    max_srp_index = np.argmax(srp1)
+    max_azimuth = azimuth1[max_srp_index]
+    max_colatitude = colatitude1[max_srp_index]
+
+    # 绘制热力图
+    plt.figure(figsize=(6, 8))
+    plt.imshow(grid_srp, extent=(-180, 180, 0, 50),
+               origin='lower', cmap='hot', aspect='auto')
+    plt.colorbar(label='SRP-PHAT')
+    plt.xlabel('Azimuth (degrees)')
+    plt.ylabel('Colatitude (degrees)')
+    plt.title('SRP-PHAT Heatmap')
+    plt.grid(color='k', linestyle='-', linewidth=0.5)
+
+    # 标注最大值位置
+    plt.scatter([max_azimuth], [max_colatitude], color='blue', label='Maximum SRP-PHAT')
+    plt.legend()
+
+    plt.show()
+    plt.savefig('SRP-PHAT-Heatmap.png')
+
+    # x_9, fs_9 = read_audio('array2/seq11-1p-0100_array2_mic1.wav')
+    # x_10, fs_10 = read_audio('array2/seq11-1p-0100_array2_mic2.wav')
+    # x_11, fs_11 = read_audio('array2/seq11-1p-0100_array2_mic3.wav')
+    # x_12, fs_12 = read_audio('array2/seq11-1p-0100_array2_mic4.wav')
+    # x_13, fs_13 = read_audio('array2/seq11-1p-0100_array2_mic5.wav')
+    # x_14, fs_14 = read_audio('array2/seq11-1p-0100_array2_mic6.wav')
+    # x_15, fs_15 = read_audio('array2/seq11-1p-0100_array2_mic7.wav')
+    # x_16, fs_16 = read_audio('array2/seq11-1p-0100_array2_mic8.wav')
+    # X_ = [x_9, x_10, x_11, x_12, x_13, x_14, x_15, x_16]
+    # X_ = np.array(X_)
+    #
+    # srp_phat(s=X_, L=L_2, fs=fs_9, i=2)
 
